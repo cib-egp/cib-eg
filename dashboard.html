@@ -408,15 +408,11 @@ td{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-
-      getFirestore,
-    collection,
-    onSnapshot,
-    doc,
-    updateDoc,
-    getDocs,
-    deleteDoc
-
+getFirestore,
+collection,
+onSnapshot,
+doc,
+updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -433,18 +429,7 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-onAuthStateChanged(auth,(user)=>{
 
-    if(!user){
-
-        window.location.href = "admin-login.html";
-        return;
-
-    }
-
-    document.body.style.opacity = "1";
-
-});
 
 const db = getFirestore(app);
 
@@ -586,52 +571,30 @@ popup.addEventListener("click",(e)=>{
 
 document.getElementById("acceptBtn").onclick = async ()=>{
 
-    const acceptBtn = document.getElementById("acceptBtn");
+    if(!currentUserId){
+        console.log("No user selected");
+        return;
+    }
 
-    if(!currentUserId) return;
+    try{
 
-    acceptBtn.disabled = true;
+        await updateDoc(
+            doc(db,"users",currentUserId),
+            {
+                currentPage: pageSelect.value,
+                status:"approved"
+            }
+        );
 
-    acceptBtn.innerText = "جاري التوجيه...";
+        console.log("Updated successfully");
 
-    await updateDoc(doc(db,"users",currentUserId),{
+        popup.classList.remove("show");
 
-        currentPage: pageSelect.value,
-        status: "approved"
+    }catch(error){
 
-    });
+        console.error("UPDATE ERROR:",error);
 
-    popup.classList.remove("show");
-
-    acceptBtn.disabled = false;
-
-    acceptBtn.innerText = "قبول و توجيه";
-
-};
-
-/* reject */
-document.getElementById("rejectBtn").onclick = async ()=>{
-
-    const rejectBtn = document.getElementById("rejectBtn");
-
-    if(!currentUserId) return;
-
-    rejectBtn.disabled = true;
-
-    rejectBtn.innerText = "جاري التوجيه...";
-
-    await updateDoc(doc(db,"users",currentUserId),{
-
-        currentPage: pageSelect.value,
-        status: "rejected"
-
-    });
-
-    popup.classList.remove("show");
-
-    rejectBtn.disabled = false;
-
-    rejectBtn.innerText = "رفض و توجيه";
+    }
 
 };
 
@@ -668,18 +631,7 @@ enableSoundBtn.onclick = async ()=>{
 
 };
 
-onAuthStateChanged(auth,(user)=>{
 
-    console.log("Current user:", user);
-
-    if(!user){
-        window.location.href="admin-login.html";
-        return;
-    }
-
-    document.body.style.opacity="1";
-
-});
 
 
 
