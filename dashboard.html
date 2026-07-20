@@ -432,6 +432,35 @@ const auth = getAuth(app);
 
 
 const db = getFirestore(app);
+import { getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const test = async ()=>{
+
+    try{
+
+        const snap = await getDocs(collection(db,"users"));
+
+        console.log("TOTAL DOCS:", snap.size);
+
+        snap.forEach((doc)=>{
+
+            console.log("ID:", doc.id);
+            console.log("DATA:", doc.data());
+
+        });
+
+    }catch(e){
+
+        console.error("FIRESTORE ERROR:",e);
+
+    }
+
+};
+
+
+test();
+
 
 const usersTable = document.getElementById("usersTable");
 
