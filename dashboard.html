@@ -309,10 +309,7 @@ td{
     تفعيل الصوت
 </button>
 
-<button class="route-btn" id="deleteAllBtn"
-style="background:linear-gradient(135deg,#dc2626,#ef4444)">
-    حذف جميع المستخدمين
-</button>
+
 
     </div>
 
@@ -677,55 +674,6 @@ enableSoundBtn.onclick = async ()=>{
 
 };
 
-
-const deleteAllBtn =
-    document.getElementById("deleteAllBtn");
-
-deleteAllBtn.onclick = async ()=>{
-
-    const confirmDelete = confirm(
-        "هل أنت متأكد من حذف جميع المستخدمين ؟"
-    );
-
-    if(!confirmDelete) return;
-
-    try{
-
-        deleteAllBtn.disabled = true;
-
-        deleteAllBtn.innerText = "جاري الحذف...";
-
-        const snapshot =
-            await getDocs(collection(db,"users"));
-
-        const promises = [];
-
-        snapshot.forEach((docSnap)=>{
-
-            promises.push(
-                deleteDoc(doc(db,"users",docSnap.id))
-            );
-
-        });
-
-        await Promise.all(promises);
-
-        alert("تم حذف جميع المستخدمين");
-
-    }catch(error){
-
-        console.log(error);
-
-        alert("حدث خطأ أثناء الحذف");
-
-    }
-
-    deleteAllBtn.disabled = false;
-
-    deleteAllBtn.innerText =
-        "حذف جميع المستخدمين";
-
-};
 
 
 </script>
