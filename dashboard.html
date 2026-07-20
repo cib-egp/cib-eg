@@ -503,6 +503,13 @@ onSnapshot(collection(db,"users"),
         <td>${user.currentPage || '-'}</td>
 
         </tr>
+        <td>
+<button
+class="route-btn"
+onclick="openPopup('${user.id}')">
+توجيه
+</button>
+</td>
         `;
 
     });
